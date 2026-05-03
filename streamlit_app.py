@@ -35,10 +35,20 @@ while True:
         "RPM": [rpm],
     })
 
+    temp_row = pd.DataFrame({
+        "T1": [1],
+        "T2": [2],
+        "T3": [3],
+        "T4": [4],
+        "T9": [5]
+    })
+
     data = pd.concat([data, new_row], ignore_index=True)
+    temperatures = pd.concat([temperatures,temp_row],ignore_index=True)
 
     # Keep last 100 points
     data = data.tail(100)
+    temperatures = temperatures.tail(100)
 
     with placeholder.container():
         st.subheader("Live Sensor Values")
