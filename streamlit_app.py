@@ -60,8 +60,8 @@ while True:
         col2.metric("Pressure (bar)", f"{pressure:.2f}")
         col3.metric("Spool Speed (RPM)", f"{rpm:.0f}")
 
-        trow1.metric("T1", f"{temperature:.1f}")
-        trow2.metric("T2", f"{temperature:.1f}")
+        tcol1.metric("T1", f"{temperature:.1f}")
+        tcol2.metric("T2", f"{temperature:.1f}")
 
 
         st.subheader("Trends")
