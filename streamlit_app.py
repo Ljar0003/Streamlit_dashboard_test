@@ -54,7 +54,7 @@ while True:
         st.subheader("Live Sensor Values")
 
         col1, col2, col3 = st.columns(3)
-        trow1, trow2, trow3, trow4, trow9 = st.rows(5)
+        tcol1, tcol2, tcol3, tcol4, tcol9 = st.columns(5)
 
         col1.metric("Temperature (°C)", f"{temperature:.1f}")
         col2.metric("Pressure (bar)", f"{pressure:.2f}")
