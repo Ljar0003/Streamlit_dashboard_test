@@ -8,7 +8,8 @@ st.set_page_config(
     page_icon='⚙️',
 )
 
-st.title("⚙️ Gas Turbine Real-Time Monitoring")
+st.title("Gas Turbine Real-Time Monitoring")
+st.image('Gas_turbine_schematic.png')
 
 # Placeholder for live data
 placeholder = st.empty()
