@@ -54,13 +54,15 @@ while True:
         st.subheader("Live Sensor Values")
 
         col1, col2, col3 = st.columns(3)
-        tcol1, tcol2, tcol3, tcol4, tcol9 = st.columns(5)
+        trow1, trow2, trow3, trow4, trow9 = st.rows(5)
 
         col1.metric("Temperature (°C)", f"{temperature:.1f}")
         col2.metric("Pressure (bar)", f"{pressure:.2f}")
         col3.metric("Spool Speed (RPM)", f"{rpm:.0f}")
 
-        tcol1.metric("", f"{temperature:.1f}")
+        trow1.metric("T1", f"{temperature:.1f}")
+        trow2.metric("T2", f"{temperature:.1f}")
+
 
         st.subheader("Trends")
 
