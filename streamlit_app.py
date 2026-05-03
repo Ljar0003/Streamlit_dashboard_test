@@ -16,6 +16,7 @@ placeholder = st.empty()
 
 # Create empty dataframe
 data = pd.DataFrame(columns=["Time", "Temperature", "Pressure", "RPM"])
+temperatures = pd.DataFrame(columns=["T1","T2","T3","T4","T9"])
 
 start_time = time.time()
 
