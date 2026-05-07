@@ -329,4 +329,4 @@ st.dataframe(summary, use_container_width=True)
 # ==========================================================
 
 time.sleep(1)
-
+st.rerun()
