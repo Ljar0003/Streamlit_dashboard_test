@@ -1,207 +1,332 @@
 import streamlit as st
 import pandas as pd
-import time
-import random
 import numpy as np
 import matplotlib.pyplot as plt
+import time
+import random
+from PIL import Image, ImageDraw
+
+# ==========================================================
+# PAGE CONFIG
+# ==========================================================
 
 st.set_page_config(
-    page_title='Gas Turbine Dashboard',
-    page_icon='⚙️',
+    page_title="Gas Turbine Dashboard",
+    page_icon="⚙️",
     layout="wide"
 )
 
-st.title("Gas Turbine Real-Time Monitoring")
+# ==========================================================
+# DARK THEME STYLING
+# ==========================================================
 
-# ---------------------------------------------------
-# SIMULATED BRAYTON CYCLE POINTS
-# ---------------------------------------------------
-# T1 = Compressor Inlet
-# T2 = Compressor Exit
-# T3 = Combustor Exit / Turbine Inlet
-# T4 = Turbine Exit
-# T9 = Exhaust
+st.markdown("""
+<style>
 
-# Placeholder for live updates
-placeholder = st.empty()
+html, body, [class*="css"] {
+    background-color: #0b1220;
+    color: white;
+}
 
-# Data storage
-history = pd.DataFrame(columns=[
-    "Time",
-    "T1", "T2", "T3", "T4", "T9",
-    "P1", "P2", "P3", "P4", "P9",
-    "RPM"
-])
+.metric-card {
+    background-color: #111827;
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid #1f2937;
+    margin-bottom: 10px;
+}
 
-start_time = time.time()
+.station-card {
+    background-color: #111827;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #1f2937;
+}
 
-# ---------------------------------------------------
-# MAIN LOOP
-# ---------------------------------------------------
-while True:
+h1, h2, h3 {
+    color: white;
+}
 
-    current_time = time.time() - start_time
+</style>
+""", unsafe_allow_html=True)
 
-    # ---------------------------------------------------
-    # SIMULATED SENSOR VALUES
-    # ---------------------------------------------------
+# ==========================================================
+# TITLE
+# ==========================================================
 
-    # Temperatures (°C)
+st.title("⚙️ Gas Turbine Real-Time Monitoring")
+
+# ==========================================================
+# DATA STORAGE
+# ==========================================================
+
+if "history" not in st.session_state:
+    st.session_state.history = pd.DataFrame(columns=[
+        "Time",
+        "T1", "T2", "T3", "T4", "T9",
+        "P1", "P2", "P3", "P4", "P9",
+        "RPM"
+    ])
+
+history = st.session_state.history
+
+# ==========================================================
+# SIDEBAR
+# ==========================================================
+
+with st.sidebar:
+
+    st.header("Live Sensor Values")
+
+    # Simulated values
     T1 = 25 + random.uniform(-2, 2)
     T2 = 180 + random.uniform(-10, 10)
     T3 = 950 + random.uniform(-20, 20)
     T4 = 600 + random.uniform(-15, 15)
     T9 = 450 + random.uniform(-10, 10)
 
-    # Pressures (bar)
     P1 = 1.0 + random.uniform(-0.05, 0.05)
     P2 = 5.5 + random.uniform(-0.2, 0.2)
     P3 = 5.2 + random.uniform(-0.2, 0.2)
     P4 = 1.4 + random.uniform(-0.05, 0.05)
     P9 = 1.0 + random.uniform(-0.05, 0.05)
 
-    # RPM
     rpm = 15000 + random.uniform(-300, 300)
 
-    # ---------------------------------------------------
-    # STORE DATA
-    # ---------------------------------------------------
-    new_row = pd.DataFrame({
-        "Time": [current_time],
+    st.markdown(f"""
+    <div class="metric-card">
+    <h4>Ambient Temperature</h4>
+    <h2 style="color:#4ade80;">{T1:.1f} °C</h2>
+    </div>
+    """, unsafe_allow_html=True)
 
-        "T1": [T1],
-        "T2": [T2],
-        "T3": [T3],
-        "T4": [T4],
-        "T9": [T9],
+    st.markdown(f"""
+    <div class="metric-card">
+    <h4>Ambient Pressure</h4>
+    <h2 style="color:#4ade80;">{P1:.2f} bar</h2>
+    </div>
+    """, unsafe_allow_html=True)
 
-        "P1": [P1],
-        "P2": [P2],
-        "P3": [P3],
-        "P4": [P4],
-        "P9": [P9],
+    st.markdown(f"""
+    <div class="metric-card">
+    <h4>Spool Speed</h4>
+    <h2 style="color:#4ade80;">{rpm:.0f} RPM</h2>
+    </div>
+    """, unsafe_allow_html=True)
 
-        "RPM": [rpm]
-    })
+# ==========================================================
+# STORE HISTORY
+# ==========================================================
 
-    history = pd.concat([history, new_row], ignore_index=True)
+current_time = time.time()
 
-    # Keep last 200 points
-    history = history.tail(200)
+new_row = pd.DataFrame({
+    "Time": [current_time],
 
-    # ---------------------------------------------------
-    # DASHBOARD DISPLAY
-    # ---------------------------------------------------
-    with placeholder.container():
+    "T1": [T1],
+    "T2": [T2],
+    "T3": [T3],
+    "T4": [T4],
+    "T9": [T9],
 
-        st.header("Live Gas Turbine Cycle")
+    "P1": [P1],
+    "P2": [P2],
+    "P3": [P3],
+    "P4": [P4],
+    "P9": [P9],
 
-        # =====================================================
-        # SCHEMATIC WITH TEMPERATURE & PRESSURE LABELS
-        # =====================================================
+    "RPM": [rpm]
+})
 
-        st.markdown("## Brayton Cycle Station Values")
+history = pd.concat([history, new_row], ignore_index=True)
+history = history.tail(200)
 
-        colA, colB, colC, colD, colE = st.columns(5)
+st.session_state.history = history
 
-        with colA:
-            st.metric("T1", f"{T1:.1f} °C")
-            st.metric("P1", f"{P1:.2f} bar")
+# ==========================================================
+# BRAYTON CYCLE IMAGE WITH OVERLAID VALUES
+# ==========================================================
 
-        with colB:
-            st.metric("T2", f"{T2:.1f} °C")
-            st.metric("P2", f"{P2:.2f} bar")
+st.subheader("Brayton Cycle Overview")
 
-        with colC:
-            st.metric("T3", f"{T3:.1f} °C")
-            st.metric("P3", f"{P3:.2f} bar")
+img = Image.open("Gas_turbine_schematic.png").convert("RGB")
+draw = ImageDraw.Draw(img)
 
-        with colD:
-            st.metric("T4", f"{T4:.1f} °C")
-            st.metric("P4", f"{P4:.2f} bar")
+# Text positions
+positions = {
+    "1": (40, 380),
+    "2": (430, 170),
+    "3": (1080, 170),
+    "4": (1150, 390),
+    "9": (1490, 390),
+}
 
-        with colE:
-            st.metric("T9", f"{T9:.1f} °C")
-            st.metric("P9", f"{P9:.2f} bar")
+# Draw temperature & pressure values
+draw.text(
+    positions["1"],
+    f"T1={T1:.1f}C\nP1={P1:.2f}bar",
+    fill=(255,140,0)
+)
 
-        st.metric("Spool Speed", f"{rpm:.0f} RPM")
+draw.text(
+    positions["2"],
+    f"T2={T2:.1f}C\nP2={P2:.2f}bar",
+    fill=(255,140,0)
+)
 
-        # =====================================================
-        # TEMPERATURE VS TIME
-        # =====================================================
+draw.text(
+    positions["3"],
+    f"T3={T3:.1f}C\nP3={P3:.2f}bar",
+    fill=(255,140,0)
+)
 
-        st.markdown("---")
-        st.subheader("Temperature vs Time")
+draw.text(
+    positions["4"],
+    f"T4={T4:.1f}C\nP4={P4:.2f}bar",
+    fill=(255,140,0)
+)
 
-        temp_df = history.set_index("Time")[[
-            "T1", "T2", "T3", "T4", "T9"
-        ]]
+draw.text(
+    positions["9"],
+    f"T9={T9:.1f}C\nP9={P9:.2f}bar",
+    fill=(255,140,0)
+)
 
-        st.line_chart(temp_df)
+st.image(img, use_container_width=True)
 
-        # =====================================================
-        # PRESSURE VS TIME
-        # =====================================================
+# ==========================================================
+# CHARTS
+# ==========================================================
 
-        st.subheader("Pressure vs Time")
+col1, col2 = st.columns(2)
 
-        pressure_df = history.set_index("Time")[[
-            "P1", "P2", "P3", "P4", "P9"
-        ]]
+# ----------------------------------------------------------
+# TEMPERATURE PLOT
+# ----------------------------------------------------------
 
-        st.line_chart(pressure_df)
+with col1:
 
-        # =====================================================
-        # T-s DIAGRAM
-        # =====================================================
+    st.subheader("Temperature vs Time")
 
-        st.subheader("Temperature-Entropy (T-s) Diagram")
+    fig1, ax1 = plt.subplots(figsize=(6,4))
 
-        # Approximate entropy values for Brayton cycle
-        s_vals = [1.0, 1.2, 2.1, 2.4, 1.0]
-        T_vals = [T1, T2, T3, T4, T1]
+    ax1.plot(history["T1"], label="T1")
+    ax1.plot(history["T2"], label="T2")
+    ax1.plot(history["T3"], label="T3")
+    ax1.plot(history["T4"], label="T4")
+    ax1.plot(history["T9"], label="T9")
 
-        fig_ts, ax_ts = plt.subplots(figsize=(6,4))
+    ax1.set_ylabel("Temperature (°C)")
+    ax1.grid(True)
+    ax1.legend()
 
-        ax_ts.plot(s_vals, T_vals, marker='o')
+    st.pyplot(fig1)
 
-        ax_ts.set_xlabel("Entropy (s)")
-        ax_ts.set_ylabel("Temperature (°C)")
-        ax_ts.set_title("Brayton Cycle T-s Diagram")
-        ax_ts.grid(True)
+# ----------------------------------------------------------
+# PRESSURE PLOT
+# ----------------------------------------------------------
 
-        ax_ts.annotate("1", (s_vals[0], T_vals[0]))
-        ax_ts.annotate("2", (s_vals[1], T_vals[1]))
-        ax_ts.annotate("3", (s_vals[2], T_vals[2]))
-        ax_ts.annotate("4", (s_vals[3], T_vals[3]))
+with col2:
 
-        st.pyplot(fig_ts)
+    st.subheader("Pressure vs Time")
 
-        # =====================================================
-        # P-v DIAGRAM
-        # =====================================================
+    fig2, ax2 = plt.subplots(figsize=(6,4))
 
-        st.subheader("Pressure-Volume (P-v) Diagram")
+    ax2.plot(history["P1"], label="P1")
+    ax2.plot(history["P2"], label="P2")
+    ax2.plot(history["P3"], label="P3")
+    ax2.plot(history["P4"], label="P4")
+    ax2.plot(history["P9"], label="P9")
 
-        # Approximate specific volume values
-        v_vals = [1.0, 0.4, 0.45, 1.2, 1.0]
-        P_vals = [P1, P2, P3, P4, P1]
+    ax2.set_ylabel("Pressure (bar)")
+    ax2.grid(True)
+    ax2.legend()
 
-        fig_pv, ax_pv = plt.subplots(figsize=(6,4))
+    st.pyplot(fig2)
 
-        ax_pv.plot(v_vals, P_vals, marker='o')
+# ==========================================================
+# THERMODYNAMIC DIAGRAMS
+# ==========================================================
 
-        ax_pv.set_xlabel("Specific Volume (v)")
-        ax_pv.set_ylabel("Pressure (bar)")
-        ax_pv.set_title("Brayton Cycle P-v Diagram")
-        ax_pv.grid(True)
+col3, col4 = st.columns(2)
 
-        ax_pv.annotate("1", (v_vals[0], P_vals[0]))
-        ax_pv.annotate("2", (v_vals[1], P_vals[1]))
-        ax_pv.annotate("3", (v_vals[2], P_vals[2]))
-        ax_pv.annotate("4", (v_vals[3], P_vals[3]))
+# ----------------------------------------------------------
+# T-S DIAGRAM
+# ----------------------------------------------------------
 
-        st.pyplot(fig_pv)
+with col3:
 
+    st.subheader("T-s Diagram")
 
-    time.sleep(0.5)
+    s = [1.0, 1.2, 2.3, 2.6, 1.0]
+    T = [T1, T2, T3, T4, T1]
+
+    fig3, ax3 = plt.subplots(figsize=(5,4))
+
+    ax3.plot(s, T, marker='o')
+
+    for i in range(4):
+        ax3.text(s[i], T[i], str(i+1))
+
+    ax3.set_xlabel("Entropy")
+    ax3.set_ylabel("Temperature (°C)")
+    ax3.grid(True)
+
+    st.pyplot(fig3)
+
+# ----------------------------------------------------------
+# P-V DIAGRAM
+# ----------------------------------------------------------
+
+with col4:
+
+    st.subheader("P-v Diagram")
+
+    v = [1.0, 0.45, 0.5, 1.3, 1.0]
+    P = [P1, P2, P3, P4, P1]
+
+    fig4, ax4 = plt.subplots(figsize=(5,4))
+
+    ax4.plot(v, P, marker='o')
+
+    for i in range(4):
+        ax4.text(v[i], P[i], str(i+1))
+
+    ax4.set_xlabel("Specific Volume")
+    ax4.set_ylabel("Pressure (bar)")
+    ax4.grid(True)
+
+    st.pyplot(fig4)
+
+# ==========================================================
+# SUMMARY TABLE
+# ==========================================================
+
+st.subheader("Station Summary")
+
+summary = pd.DataFrame({
+    "Point": ["1","2","3","4","9"],
+    "Temperature (°C)": [
+        round(T1,1),
+        round(T2,1),
+        round(T3,1),
+        round(T4,1),
+        round(T9,1)
+    ],
+    "Pressure (bar)": [
+        round(P1,2),
+        round(P2,2),
+        round(P3,2),
+        round(P4,2),
+        round(P9,2)
+    ]
+})
+
+st.dataframe(summary, use_container_width=True)
+
+# ==========================================================
+# AUTO REFRESH
+# ==========================================================
+
+time.sleep(0.25)
+st.rerun()
