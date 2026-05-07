@@ -328,5 +328,5 @@ st.dataframe(summary, use_container_width=True)
 # AUTO REFRESH
 # ==========================================================
 
-time.sleep(0.25)
-st.rerun()
+time.sleep(1)
+
